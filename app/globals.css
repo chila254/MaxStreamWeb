@@ -3,16 +3,42 @@
 @theme inline {
   --color-brand: #C50606;
   --color-brand-dark: #9e0505;
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
-  --color-muted: #a1a1aa;
-  --color-card: #18181b;
-  --color-border: #27272a;
+  --color-muted: #71717a;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Light mode (default) */
+:root {
+  --background: #fafafa;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --border: #e4e4e7;
+  --muted-fg: #71717a;
+}
+
+/* Dark mode */
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --border: #27272a;
+  --muted-fg: #a1a1aa;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted-fg);
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--background);
+  color: var(--foreground);
 }
 
 ::selection {
