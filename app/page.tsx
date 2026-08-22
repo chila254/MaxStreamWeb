@@ -1,5 +1,4 @@
 import {
-  Play,
   MonitorPlay,
   Smartphone,
   Tv,
@@ -32,9 +31,7 @@ function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand">
-            <Play className="h-4 w-4 fill-white text-white" />
-          </div>
+          <img src="/app_icon.png" alt="MaxStream" className="h-8 w-8 rounded-lg" />
           <span className="text-lg font-bold tracking-tight">MaxStream</span>
         </div>
         <div className="flex items-center gap-4">
@@ -205,9 +202,7 @@ function Footer() {
     <footer className="border-t border-border">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
         <div className="flex items-center gap-2 text-sm text-muted">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-brand">
-            <Play className="h-3 w-3 fill-white text-white" />
-          </div>
+          <img src="/app_icon.png" alt="" className="h-6 w-6 rounded" />
           MaxStream
         </div>
         <div className="flex gap-6 text-sm text-muted">
