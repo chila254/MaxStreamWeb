@@ -1,0 +1,39 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "MaxStream — Stream Movies & Series",
+  description:
+    "Stream movies and series on your phone, tablet, or Android TV. Free, fast, and ad-free.",
+  openGraph: {
+    title: "MaxStream — Stream Movies & Series",
+    description:
+      "Stream movies and series on your phone, tablet, or Android TV. Free, fast, and ad-free.",
+    type: "website",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="min-h-screen bg-background text-foreground font-sans antialiased">
+        {children}
+      </body>
+    </html>
+  );
+}
