@@ -20,6 +20,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Features />
+      <Screenshots />
       <DownloadSection />
       <Footer />
     </div>
@@ -62,8 +63,8 @@ function Hero() {
           on any device
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted">
-          Watch on your phone, tablet, or Android TV. Sync your watchlist and
-          progress across devices. Free and open-source.
+          Watch on your phone, tablet, or Android TV. Sign in to sync your
+          watchlist and progress across devices.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <a
@@ -105,8 +106,8 @@ const FEATURES = [
   },
   {
     icon: Shield,
-    title: "Private",
-    desc: "No ads, no tracking, no accounts required. Your data stays on your device.",
+    title: "Your account, your data",
+    desc: "Sign in with email or device code. Your watchlist and progress sync across your phone and TV — never shared with third parties.",
   },
 ];
 
@@ -131,6 +132,47 @@ function Features() {
               </div>
               <h3 className="text-lg font-semibold">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const SCREENSHOTS = [
+  { src: "/screenshots/Home_Screen.jpg", alt: "Home screen" },
+  { src: "/screenshots/Login-Signup_Screen.jpg", alt: "Login & Signup" },
+  { src: "/screenshots/Search_Screen1.jpg", alt: "Search" },
+  { src: "/screenshots/Search_Screen2.jpg", alt: "Search results" },
+  { src: "/screenshots/Watchlist_Screen.jpg", alt: "Watchlist" },
+  { src: "/screenshots/More_Screen.jpg", alt: "More" },
+];
+
+function Screenshots() {
+  return (
+    <section className="border-t border-border">
+      <div className="mx-auto max-w-6xl px-6 py-24">
+        <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">
+          See it in action
+        </h2>
+        <p className="mx-auto mt-4 max-w-lg text-center text-muted">
+          A clean, modern interface designed for browsing and watching.
+        </p>
+        <div className="mt-16 flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+          {SCREENSHOTS.map((s) => (
+            <div
+              key={s.src}
+              className="relative shrink-0 snap-center w-[260px] sm:w-[300px]"
+            >
+              <div className="overflow-hidden rounded-3xl border border-border bg-card">
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  className="w-full object-cover"
+                />
+              </div>
+              <p className="mt-3 text-center text-sm text-muted">{s.alt}</p>
             </div>
           ))}
         </div>
