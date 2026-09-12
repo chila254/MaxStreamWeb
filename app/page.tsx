@@ -20,8 +20,12 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
-const MOBILE_APK =
-  "https://github.com/chila254/maxstream/releases/latest/download/maxstream.apk";
+const MOBILE_APK_ARM64 =
+  "https://github.com/chila254/maxstream/releases/latest/download/maxstream-arm64-v8a.apk";
+const MOBILE_APK_ARM32 =
+  "https://github.com/chila254/maxstream/releases/latest/download/maxstream-armeabi-v7a.apk";
+const MOBILE_APK_X86 =
+  "https://github.com/chila254/maxstream/releases/latest/download/maxstream-x86_64.apk";
 const TV_APK =
   "https://github.com/chila254/maxstream/releases/latest/download/maxstream-tv.apk";
 
@@ -118,7 +122,7 @@ function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
             )}
           </button>
           <a
-            href={MOBILE_APK}
+            href="#download"
             className="hidden rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-dark sm:inline-flex sm:text-sm"
           >
             Download
@@ -196,13 +200,20 @@ function Sidebar({
         </div>
       </nav>
 
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-4 space-y-2">
         <a
-          href={MOBILE_APK}
+          href="#download"
           className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark"
         >
           <Download className="h-4 w-4" />
-          Download APK
+          Download APKs
+        </a>
+        <a
+          href={TV_APK}
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-brand bg-transparent px-4 py-2 text-xs font-medium text-brand transition hover:bg-brand hover:text-white"
+        >
+          <Tv className="h-4 w-4" />
+          Android TV
         </a>
       </div>
     </aside>
@@ -216,7 +227,7 @@ function Hero() {
       <div className="relative mx-auto max-w-6xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:py-36">
         <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs sm:text-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-          v1.5.0 — Now with cloud sync
+          v1.6.0 — Voice search, live recommendations & TV subtitles
         </div>
         <h1 className="mx-auto max-w-3xl text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
           Stream{" "}
@@ -229,7 +240,7 @@ function Hero() {
         </p>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <a
-            href={MOBILE_APK}
+            href="#download"
             className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark sm:w-auto sm:text-base"
           >
             <Smartphone className="h-5 w-5" />
@@ -367,16 +378,47 @@ function DownloadSection() {
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 Stream movies and series on your mobile device. Requires Android
-                5.0+.
+                5.0+. Choose the APK matching your device&apos;s CPU architecture.
               </p>
             </div>
-            <a
-              href={MOBILE_APK}
-              className="mt-6 flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark sm:mt-8"
-            >
-              <Download className="h-4 w-4" />
-              Download APK
-            </a>
+            <div className="mt-6 space-y-3 sm:mt-8">
+              <div>
+                <a
+                  href={MOBILE_APK_ARM64}
+                  className="flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark"
+                >
+                  <Download className="h-4 w-4" />
+                  arm64-v8a (most devices)
+                </a>
+                <p className="mt-1.5 px-2 text-xs text-muted">
+                  Samsung Galaxy S7 and newer, Pixel, OnePlus, Xiaomi, Redmi, Oppo, Vivo, Realme, Nothing Phone, Motorola G series (2017+)
+                </p>
+              </div>
+              <div>
+                <a
+                  href={MOBILE_APK_ARM32}
+                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-medium transition hover:border-muted"
+                >
+                  <Download className="h-4 w-4" />
+                  armeabi-v7a (32-bit)
+                </a>
+                <p className="mt-1.5 px-2 text-xs text-muted">
+                  Older budget phones: Samsung Galaxy J series, J2–J7, older Moto E/G, LG K series, Android 5.0–6.0 devices
+                </p>
+              </div>
+              <div>
+                <a
+                  href={MOBILE_APK_X86}
+                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-medium transition hover:border-muted"
+                >
+                  <Download className="h-4 w-4" />
+                  x86_64 (emulator / ChromeOS)
+                </a>
+                <p className="mt-1.5 px-2 text-xs text-muted">
+                  Android emulators (AVD, BlueStacks, LDPlayer), ChromeOS tablets, Intel-based Android devices
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-col justify-between rounded-2xl border border-border bg-background p-6 sm:p-8">
