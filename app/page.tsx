@@ -335,7 +335,7 @@ function Hero() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
           </span>
-          <span className="text-muted">v1.6.0 — Voice search, live recommendations & TV subtitles</span>
+          <span className="text-muted">v1.7.0 — Viduki server, subtitle sync & HEVC decode</span>
         </div>
 
         {/* Headline */}
