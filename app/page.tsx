@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MonitorPlay,
   Smartphone,
@@ -17,6 +17,10 @@ import {
   ChevronDown,
   Code2,
   ExternalLink,
+  Play,
+  Globe,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
@@ -36,6 +40,63 @@ const NAV_LINKS = [
   { label: "FAQ", href: "#faq" },
 ];
 
+function useReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("visible");
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return ref;
+}
+
+function RevealDiv({
+  children,
+  className = "",
+  delay = 0,
+  ...props
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+} & React.HTMLAttributes<HTMLDivElement>) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => el.classList.add("visible"), delay);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [delay]);
+
+  return (
+    <div ref={ref} className={`reveal ${className}`} {...props}>
+      {children}
+    </div>
+  );
+}
+
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -48,13 +109,13 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col noise-overlay">
       <Navbar onMenuToggle={() => setSidebarOpen((o) => !o)} />
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -73,25 +134,41 @@ export default function Home() {
 
 function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const { theme, toggle } = useTheme();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <nav
+      className={`sticky top-0 z-40 transition-all duration-300 ${
+        scrolled
+          ? "border-b border-border/50 bg-background/60 shadow-lg shadow-black/5 backdrop-blur-xl"
+          : "border-b border-transparent bg-background/0"
+      }`}
+    >
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuToggle}
-            className="rounded-md p-1.5 hover:bg-border/50 lg:hidden"
+            className="rounded-xl p-2 hover:bg-border/50 lg:hidden"
             aria-label="Menu"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <a href="#" className="flex items-center gap-2">
-            <img
-              src="/app_icon.png"
-              alt="MaxStream"
-              className="h-7 w-7 rounded-lg"
-            />
-            <span className="text-base font-bold tracking-tight sm:text-lg">
+          <a href="#" className="flex items-center gap-2.5 group">
+            <div className="relative">
+              <img
+                src="/app_icon.png"
+                alt="MaxStream"
+                className="h-8 w-8 rounded-xl transition-transform duration-300 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 rounded-xl bg-brand/20 blur-md opacity-0 transition-opacity group-hover:opacity-100" />
+            </div>
+            <span className="text-lg font-bold tracking-tight">
               MaxStream
             </span>
           </a>
@@ -102,7 +179,7 @@ function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
             <a
               key={l.href}
               href={l.href}
-              className="rounded-lg px-3 py-1.5 text-sm text-muted transition hover:bg-border/50 hover:text-foreground"
+              className="rounded-xl px-4 py-2 text-sm text-muted transition-all hover:bg-border/50 hover:text-foreground"
             >
               {l.label}
             </a>
@@ -112,7 +189,7 @@ function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
         <div className="flex items-center gap-2">
           <button
             onClick={toggle}
-            className="rounded-lg p-1.5 text-muted transition hover:bg-border/50 hover:text-foreground"
+            className="rounded-xl p-2 text-muted transition-all hover:bg-border/50 hover:text-foreground"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? (
@@ -123,7 +200,7 @@ function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
           </button>
           <a
             href="#download"
-            className="hidden rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-dark sm:inline-flex sm:text-sm"
+            className="hidden rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-dark hover:shadow-lg hover:shadow-brand/25 sm:inline-flex"
           >
             Download
           </a>
@@ -142,22 +219,22 @@ function Sidebar({
 }) {
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border bg-card transition-transform duration-200 lg:hidden ${
+      className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border bg-card/80 backdrop-blur-2xl transition-transform duration-300 ease-out lg:hidden ${
         open ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <a href="#" className="flex items-center gap-2" onClick={onClose}>
+      <div className="flex h-16 items-center justify-between border-b border-border px-4">
+        <a href="#" className="flex items-center gap-2.5" onClick={onClose}>
           <img
             src="/app_icon.png"
             alt="MaxStream"
-            className="h-7 w-7 rounded-lg"
+            className="h-8 w-8 rounded-xl"
           />
-          <span className="text-base font-bold tracking-tight">MaxStream</span>
+          <span className="text-lg font-bold tracking-tight">MaxStream</span>
         </a>
         <button
           onClick={onClose}
-          className="rounded-md p-1.5 hover:bg-border/50"
+          className="rounded-xl p-2 hover:bg-border/50"
           aria-label="Close menu"
         >
           <X className="h-5 w-5" />
@@ -171,19 +248,19 @@ function Sidebar({
               key={l.href}
               href={l.href}
               onClick={onClose}
-              className="block rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-border/50 hover:text-foreground"
+              className="block rounded-xl px-4 py-3 text-sm font-medium text-muted transition-all hover:bg-border/50 hover:text-foreground"
             >
               {l.label}
             </a>
           ))}
         </div>
 
-        <div className="mt-6 space-y-1">
+        <div className="mt-8 space-y-1">
           <a
             href="https://github.com/chila254/maxstream"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition hover:bg-border/50 hover:text-foreground"
+            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-muted transition-all hover:bg-border/50 hover:text-foreground"
           >
             <Code2 className="h-4 w-4" />
             GitHub
@@ -192,7 +269,7 @@ function Sidebar({
             href="https://github.com/chila254/maxstream/releases"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition hover:bg-border/50 hover:text-foreground"
+            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-muted transition-all hover:bg-border/50 hover:text-foreground"
           >
             <ExternalLink className="h-4 w-4" />
             Releases
@@ -203,14 +280,15 @@ function Sidebar({
       <div className="border-t border-border p-4 space-y-2">
         <a
           href="#download"
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark"
+          onClick={onClose}
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-brand-dark hover:shadow-lg hover:shadow-brand/25"
         >
           <Download className="h-4 w-4" />
           Download APKs
         </a>
         <a
           href={TV_APK}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-brand bg-transparent px-4 py-2 text-xs font-medium text-brand transition hover:bg-brand hover:text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-brand/30 bg-brand/5 px-4 py-2.5 text-xs font-medium text-brand transition-all hover:bg-brand hover:text-white"
         >
           <Tv className="h-4 w-4" />
           Android TV
@@ -223,37 +301,87 @@ function Sidebar({
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--color-brand)_0%,_transparent_60%)] opacity-10 dark:opacity-15" />
-      <div className="relative mx-auto max-w-6xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:py-36">
-        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs sm:text-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-          v1.6.0 — Voice search, live recommendations & TV subtitles
+      {/* Animated mesh gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-brand/8 via-transparent to-brand/5 animate-mesh-gradient" />
+
+      {/* Glowing orbs */}
+      <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-brand/10 blur-[120px] animate-glow-pulse" />
+      <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-brand/8 blur-[100px] animate-glow-pulse" style={{ animationDelay: "1.5s" }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-brand/5 blur-[80px] animate-float-slow" />
+
+      {/* Rotating gradient ring */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full border border-brand/5 animate-rotate-slow opacity-40" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[800px] w-[800px] rounded-full border border-brand/3 animate-rotate-slow opacity-20" style={{ animationDirection: "reverse", animationDuration: "30s" }} />
+
+      <div className="relative mx-auto max-w-6xl px-4 py-24 text-center sm:px-6 sm:py-32 lg:py-40">
+        {/* Badge */}
+        <div className="mb-8 inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-xs sm:text-sm animate-fade-in-up">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+          </span>
+          <span className="text-muted">v1.6.0 — Voice search, live recommendations & TV subtitles</span>
         </div>
-        <h1 className="mx-auto max-w-3xl text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+
+        {/* Headline */}
+        <h1
+          className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl animate-fade-in-up"
+          style={{ animationDelay: "100ms" }}
+        >
           Stream{" "}
-          <span className="text-brand">movies & series</span>{" "}
+          <span className="gradient-text">
+            movies & series
+          </span>{" "}
           on any device
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+
+        {/* Subtitle */}
+        <p
+          className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg animate-fade-in-up"
+          style={{ animationDelay: "200ms" }}
+        >
           Watch on your phone, tablet, or Android TV. Sign in to sync your
           watchlist and progress across devices.
         </p>
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+
+        {/* CTA Buttons */}
+        <div
+          className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center animate-fade-in-up"
+          style={{ animationDelay: "300ms" }}
+        >
           <a
             href="#download"
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark sm:w-auto sm:text-base"
+            className="group relative flex w-full items-center justify-center gap-2.5 rounded-full bg-brand px-8 py-4 text-sm font-semibold text-white transition-all hover:bg-brand-dark sm:w-auto sm:text-base"
           >
+            <div className="absolute inset-0 rounded-full animate-glow-ring opacity-0 transition-opacity group-hover:opacity-100" />
             <Smartphone className="h-5 w-5" />
             Download for Android
-            <ChevronRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </a>
           <a
             href={TV_APK}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold transition hover:border-muted sm:w-auto sm:text-base"
+            className="group flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-card/50 px-8 py-4 text-sm font-semibold backdrop-blur-sm transition-all hover:border-brand/30 hover:bg-card sm:w-auto sm:text-base"
           >
             <Tv className="h-5 w-5" />
             Download for Android TV
           </a>
+        </div>
+
+        {/* Stats */}
+        <div
+          className="mt-14 flex flex-wrap items-center justify-center gap-8 sm:gap-12 animate-fade-in-up"
+          style={{ animationDelay: "400ms" }}
+        >
+          {[
+            { icon: Globe, label: "Open Source" },
+            { icon: Zap, label: "Fast & Lightweight" },
+            { icon: Shield, label: "Private & Secure" },
+          ].map((stat) => (
+            <div key={stat.label} className="flex items-center gap-2 text-sm text-muted">
+              <stat.icon className="h-4 w-4 text-brand/70" />
+              {stat.label}
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -264,49 +392,74 @@ const FEATURES = [
   {
     icon: MonitorPlay,
     title: "Multi-server streaming",
-    desc: "Switch between VixSrc, VidLink, and more servers without restarting playback.",
+    desc: "Switch between VixSrc, VidLink, Viduki, and more servers without restarting playback.",
+    gradient: "from-red-500/20 to-orange-500/20",
   },
   {
     icon: RefreshCw,
     title: "Cloud sync",
     desc: "Your watchlist, watch history, and continue-watching sync between your phone and TV in real time.",
+    gradient: "from-blue-500/20 to-cyan-500/20",
   },
   {
     icon: Zap,
     title: "Fast & lightweight",
     desc: "Parallel server racing, pre-flight validation, and memory-pressure handling for smooth playback.",
+    gradient: "from-yellow-500/20 to-amber-500/20",
   },
   {
     icon: Shield,
     title: "Your account, your data",
     desc: "Sign in with email or device code. Your watchlist and progress sync across your phone and TV.",
+    gradient: "from-green-500/20 to-emerald-500/20",
+  },
+  {
+    icon: Sparkles,
+    title: "Voice search",
+    desc: "Find movies and series hands-free with built-in voice search and smart query parsing.",
+    gradient: "from-purple-500/20 to-pink-500/20",
+  },
+  {
+    icon: Play,
+    title: "Continue watching",
+    desc: "Pick up right where you left off with per-episode progress and automatic next-episode playback.",
+    gradient: "from-indigo-500/20 to-violet-500/20",
   },
 ];
 
 function Features() {
   return (
-    <section id="features" className="border-t border-border bg-card/50">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-          Built for watching
-        </h2>
-        <p className="mx-auto mt-3 max-w-lg text-center text-sm text-muted sm:text-base">
-          Everything you need to stream, nothing you don&apos;t.
-        </p>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:mt-16">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="group rounded-2xl border border-border bg-background p-5 transition hover:border-brand/50 sm:p-6"
-            >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand transition group-hover:bg-brand group-hover:text-white">
-                <f.icon className="h-5 w-5" />
+    <section id="features" className="relative border-t border-border bg-card/30">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-brand)_0%,_transparent_70%)] opacity-[0.03]" />
+      <div className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
+        <RevealDiv className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            Built for{" "}
+            <span className="gradient-text-static">watching</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-base text-muted sm:text-lg">
+            Everything you need to stream, nothing you don&apos;t.
+          </p>
+        </RevealDiv>
+
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 sm:mt-16">
+          {FEATURES.map((f, i) => (
+            <RevealDiv key={f.title} delay={i * 80}>
+              <div className="group glass-card relative overflow-hidden rounded-2xl p-6 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/10 sm:p-7 h-full">
+                {/* Gradient glow on hover */}
+                <div className={`absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br ${f.gradient} blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100`} />
+
+                <div className="relative">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand/10 to-brand/5 text-brand transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-brand/20">
+                    <f.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-lg font-bold sm:text-xl">{f.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">
+                    {f.desc}
+                  </p>
+                </div>
               </div>
-              <h3 className="text-base font-semibold sm:text-lg">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                {f.desc}
-              </p>
-            </div>
+            </RevealDiv>
           ))}
         </div>
       </div>
@@ -325,31 +478,54 @@ const SCREENSHOTS = [
 
 function Screenshots() {
   return (
-    <section id="screenshots" className="border-t border-border">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-          See it in action
-        </h2>
-        <p className="mx-auto mt-3 max-w-lg text-center text-sm text-muted sm:text-base">
-          A clean, modern interface designed for browsing and watching.
-        </p>
-        <div className="mt-12 flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide sm:mt-16 sm:gap-6">
-          {SCREENSHOTS.map((s) => (
-            <div
+    <section id="screenshots" className="relative border-t border-border overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/[0.02] to-transparent" />
+      <div className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
+        <RevealDiv className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            See it in{" "}
+            <span className="gradient-text-static">action</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-base text-muted sm:text-lg">
+            A clean, modern interface designed for browsing and watching.
+          </p>
+        </RevealDiv>
+
+        <div className="mt-14 flex gap-6 overflow-x-auto pb-6 pt-4 snap-x snap-mandatory scrollbar-hide sm:mt-16">
+          {SCREENSHOTS.map((s, i) => (
+            <RevealDiv
               key={s.src}
-              className="relative shrink-0 snap-center w-[220px] sm:w-[260px] lg:w-[300px]"
+              delay={i * 100}
+              className="shrink-0 snap-center"
             >
-              <div className="overflow-hidden rounded-2xl border border-border bg-card sm:rounded-3xl">
-                <img
-                  src={s.src}
-                  alt={s.alt}
-                  className="w-full object-cover"
-                />
+              <div className="group relative">
+                {/* Phone frame */}
+                <div className="phone-mockup relative w-[200px] sm:w-[240px] lg:w-[280px]">
+                  {/* Glow behind phone */}
+                  <div className="absolute -inset-4 rounded-[2.5rem] bg-brand/10 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+                  {/* Phone bezel */}
+                  <div className="relative rounded-[2rem] border-[3px] border-zinc-800 bg-zinc-900 p-1 shadow-2xl">
+                    {/* Notch */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 h-5 w-20 rounded-b-2xl bg-zinc-800" />
+
+                    {/* Screen */}
+                    <div className="overflow-hidden rounded-[1.5rem]">
+                      <img
+                        src={s.src}
+                        alt={s.alt}
+                        className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Label */}
+                <p className="mt-4 text-center text-sm font-medium text-muted transition-colors group-hover:text-foreground">
+                  {s.alt}
+                </p>
               </div>
-              <p className="mt-2 text-center text-xs text-muted sm:mt-3 sm:text-sm">
-                {s.alt}
-              </p>
-            </div>
+            </RevealDiv>
           ))}
         </div>
       </div>
@@ -360,109 +536,147 @@ function Screenshots() {
 function DownloadSection() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const closeDialog = useCallback(() => setDialogOpen(false), []);
+
   return (
-    <section id="download" className="border-t border-border bg-card/50">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-          Download MaxStream
-        </h2>
-        <p className="mx-auto mt-3 max-w-lg text-center text-sm text-muted sm:text-base">
-          Free for Android phones and Android TV. Open-source on GitHub.
-        </p>
-        <div className="mt-12 flex justify-center sm:mt-16">
+    <section id="download" className="relative border-t border-border overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.06] via-transparent to-brand/[0.04] animate-mesh-gradient" style={{ backgroundSize: "300% 300%" }} />
+
+      {/* Floating orbs */}
+      <div className="absolute top-20 left-10 h-40 w-40 rounded-full bg-brand/10 blur-[80px] animate-float" />
+      <div className="absolute bottom-20 right-10 h-32 w-32 rounded-full bg-brand/8 blur-[60px] animate-float-reverse" />
+
+      <div className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
+        <RevealDiv className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            Download{" "}
+            <span className="gradient-text-static">MaxStream</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-base text-muted sm:text-lg">
+            Free for Android phones and Android TV. Open-source on GitHub.
+          </p>
+        </RevealDiv>
+
+        <RevealDiv delay={200} className="mt-14 flex justify-center sm:mt-16">
           <button
             onClick={() => setDialogOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-full bg-brand px-8 py-4 text-base font-semibold text-white transition hover:bg-brand-dark sm:text-lg"
+            className="group relative flex items-center justify-center gap-3 rounded-full bg-brand px-10 py-5 text-base font-semibold text-white transition-all hover:bg-brand-dark hover:shadow-2xl hover:shadow-brand/30 sm:text-lg"
           >
+            <div className="absolute inset-0 rounded-full animate-glow-ring" />
             <Download className="h-5 w-5" />
             Download APK
+            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
-        </div>
+        </RevealDiv>
       </div>
 
+      {/* Dialog */}
       {dialogOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setDialogOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in-scale"
+          onClick={closeDialog}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-2xl"
+            className="w-full max-w-md overflow-hidden rounded-3xl border border-border/50 bg-background shadow-2xl animate-fade-in-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-lg font-bold">Choose your APK</h3>
-              <button
-                onClick={() => setDialogOpen(false)}
-                className="rounded-lg p-1.5 hover:bg-border/50"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            {/* Dialog header with gradient */}
+            <div className="relative border-b border-border/50 px-6 py-5">
+              <div className="absolute inset-0 bg-gradient-to-r from-brand/5 via-transparent to-brand/5" />
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold">Choose your APK</h3>
+                  <p className="mt-0.5 text-xs text-muted">Select the version for your device</p>
+                </div>
+                <button
+                  onClick={closeDialog}
+                  className="rounded-xl p-2 transition-colors hover:bg-border/50"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="px-6 py-5 space-y-5">
+              {/* Mobile section */}
               <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
+                  <Smartphone className="h-3.5 w-3.5" />
                   Mobile
                 </p>
                 <div className="space-y-2">
-                  <a
-                    href={MOBILE_APK_ARM64}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                      <Smartphone className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">arm64-v8a</p>
-                      <p className="text-xs text-muted">Samsung S7+, Pixel, OnePlus, Xiaomi, most phones 2017+</p>
-                    </div>
-                    <Download className="h-4 w-4 shrink-0 text-muted" />
-                  </a>
-                  <a
-                    href={MOBILE_APK_ARM32}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                      <Smartphone className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">armeabi-v7a</p>
-                      <p className="text-xs text-muted">Older budget phones: Galaxy J2–J7, Moto E/G, LG K series</p>
-                    </div>
-                    <Download className="h-4 w-4 shrink-0 text-muted" />
-                  </a>
-                  <a
-                    href={MOBILE_APK_X86}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                      <Smartphone className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">x86_64</p>
-                      <p className="text-xs text-muted">Emulators (AVD, BlueStacks), ChromeOS, Intel devices</p>
-                    </div>
-                    <Download className="h-4 w-4 shrink-0 text-muted" />
-                  </a>
+                  {[
+                    {
+                      href: MOBILE_APK_ARM64,
+                      arch: "arm64-v8a",
+                      desc: "Samsung S7+, Pixel, OnePlus, Xiaomi, most phones 2017+",
+                      recommended: true,
+                    },
+                    {
+                      href: MOBILE_APK_ARM32,
+                      arch: "armeabi-v7a",
+                      desc: "Older budget phones: Galaxy J2–J7, Moto E/G, LG K series",
+                      recommended: false,
+                    },
+                    {
+                      href: MOBILE_APK_X86,
+                      arch: "x86_64",
+                      desc: "Emulators (AVD, BlueStacks), ChromeOS, Intel devices",
+                      recommended: false,
+                    },
+                  ].map((item) => (
+                    <a
+                      key={item.arch}
+                      href={item.href}
+                      className={`group flex items-center gap-3 rounded-xl border p-3 transition-all duration-300 hover:scale-[1.01] ${
+                        item.recommended
+                          ? "border-brand/30 bg-brand/5 hover:border-brand/50 hover:shadow-lg hover:shadow-brand/10"
+                          : "border-border bg-card/50 hover:border-border/80 hover:bg-card"
+                      }`}
+                    >
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                        item.recommended
+                          ? "bg-brand/10 text-brand"
+                          : "bg-border/50 text-muted group-hover:bg-brand/10 group-hover:text-brand"
+                      }`}>
+                        <Smartphone className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold">{item.arch}</p>
+                          {item.recommended && (
+                            <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-bold text-brand uppercase">
+                              Recommended
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted truncate">{item.desc}</p>
+                      </div>
+                      <Download className="h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-brand" />
+                    </a>
+                  ))}
                 </div>
               </div>
 
-              <div className="border-t border-border pt-4">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+              {/* TV section */}
+              <div className="border-t border-border/50 pt-5">
+                <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
+                  <Tv className="h-3.5 w-3.5" />
                   TV
                 </p>
                 <a
                   href={TV_APK}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
+                  className="group flex items-center gap-3 rounded-xl border border-border bg-card/50 p-3 transition-all duration-300 hover:border-brand/30 hover:bg-card hover:scale-[1.01] hover:shadow-lg hover:shadow-brand/10"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                    <Tv className="h-4 w-4" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-border/50 text-muted transition-colors group-hover:bg-brand/10 group-hover:text-brand">
+                    <Tv className="h-5 w-5" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold">Universal (all TV devices)</p>
-                    <p className="text-xs text-muted">Android TV, Fire TV, Chromecast, Nvidia Shield</p>
+                    <p className="mt-0.5 text-xs text-muted">Android TV, Fire TV, Chromecast, Nvidia Shield</p>
                   </div>
-                  <Download className="h-4 w-4 shrink-0 text-muted" />
+                  <Download className="h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-brand" />
                 </a>
               </div>
             </div>
@@ -504,38 +718,67 @@ function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="border-t border-border">
-      <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-24">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-          Frequently asked questions
-        </h2>
-        <div className="mt-10 divide-y divide-border sm:mt-12">
-          {FAQ_ITEMS.map((item, i) => (
-            <div key={i}>
-              <button
-                onClick={() =>
-                  setOpenIndex(openIndex === i ? null : i)
-                }
-                className="flex w-full items-center justify-between gap-4 py-4 text-left text-sm font-medium sm:py-5 sm:text-base"
-              >
-                {item.q}
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-muted transition-transform ${
-                    openIndex === i ? "rotate-180" : ""
+    <section id="faq" className="relative border-t border-border">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/[0.02] to-transparent" />
+      <div className="relative mx-auto max-w-3xl px-4 py-24 sm:px-6 sm:py-32">
+        <RevealDiv className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            Frequently asked{" "}
+            <span className="gradient-text-static">questions</span>
+          </h2>
+        </RevealDiv>
+
+        <div className="mt-12 space-y-3 sm:mt-16">
+          {FAQ_ITEMS.map((item, i) => {
+            const isOpen = openIndex === i;
+            return (
+              <RevealDiv key={i} delay={i * 60}>
+                <div
+                  className={`group overflow-hidden rounded-2xl border transition-all duration-300 ${
+                    isOpen
+                      ? "border-brand/30 bg-card shadow-lg shadow-brand/5"
+                      : "border-border/50 bg-card/50 hover:border-border hover:bg-card"
                   }`}
-                />
-              </button>
-              <div
-                className={`overflow-hidden transition-all duration-200 ${
-                  openIndex === i ? "max-h-40 pb-4" : "max-h-0"
-                }`}
-              >
-                <p className="text-sm leading-relaxed text-muted">
-                  {item.a}
-                </p>
-              </div>
-            </div>
-          ))}
+                >
+                  <button
+                    onClick={() => setOpenIndex(isOpen ? null : i)}
+                    className="flex w-full items-center gap-4 p-5 text-left sm:p-6"
+                  >
+                    {/* Number indicator */}
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                      isOpen
+                        ? "bg-brand text-white shadow-lg shadow-brand/30"
+                        : "bg-border/50 text-muted group-hover:bg-brand/10 group-hover:text-brand"
+                    }`}>
+                      {i + 1}
+                    </span>
+
+                    <span className="flex-1 text-sm font-semibold sm:text-base">
+                      {item.q}
+                    </span>
+
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-muted transition-transform duration-300 ${
+                        isOpen ? "rotate-180 text-brand" : ""
+                      }`}
+                    />
+                  </button>
+
+                  <div className={`faq-answer ${isOpen ? "open" : ""}`}>
+                    <div>
+                      <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+                        <div className="ml-12 border-l-2 border-brand/20 pl-4">
+                          <p className="text-sm leading-relaxed text-muted">
+                            {item.a}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </RevealDiv>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -544,29 +787,107 @@ function FAQ() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6 sm:py-8">
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <img src="/app_icon.png" alt="" className="h-5 w-5 rounded sm:h-6 sm:w-6" />
-          MaxStream
+    <footer className="relative border-t border-border">
+      {/* Gradient divider */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent" />
+
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="grid gap-10 sm:grid-cols-3 sm:gap-8">
+          {/* Brand */}
+          <div className="sm:col-span-1">
+            <a href="#" className="flex items-center gap-2.5">
+              <img src="/app_icon.png" alt="" className="h-8 w-8 rounded-xl" />
+              <span className="text-lg font-bold">MaxStream</span>
+            </a>
+            <p className="mt-3 text-sm leading-relaxed text-muted max-w-xs">
+              Free, open-source streaming app for Android and Android TV.
+            </p>
+            <div className="mt-5 flex gap-3">
+              <a
+                href="https://github.com/chila254/maxstream"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted transition-all hover:border-brand/30 hover:text-foreground"
+              >
+                <Code2 className="h-4 w-4" />
+              </a>
+              <a
+                href="https://github.com/chila254/maxstream/releases"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted transition-all hover:border-brand/30 hover:text-foreground"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+
+          {/* Links */}
+          <div className="sm:col-span-1">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted">
+              Product
+            </h4>
+            <div className="mt-4 space-y-2.5">
+              {NAV_LINKS.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  className="block text-sm text-muted transition-colors hover:text-foreground"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="sm:col-span-1">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted">
+              Resources
+            </h4>
+            <div className="mt-4 space-y-2.5">
+              <a
+                href="https://github.com/chila254/maxstream"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                Source Code
+              </a>
+              <a
+                href="https://github.com/chila254/maxstream/releases"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
+              >
+                <Download className="h-3.5 w-3.5" />
+                All Releases
+              </a>
+              <a
+                href="https://github.com/chila254/maxstream/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Report Issue
+              </a>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-5 text-sm text-muted">
-          <a
-            href="https://github.com/chila254/maxstream"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition hover:text-foreground"
-          >
-            GitHub
-          </a>
-          <a
-            href="https://github.com/chila254/maxstream/releases"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition hover:text-foreground"
-          >
-            Releases
-          </a>
+
+        {/* Bottom bar */}
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 sm:flex-row">
+          <p className="text-xs text-muted">
+            &copy; {new Date().getFullYear()} MaxStream. Open-source under MIT License.
+          </p>
+          <div className="flex items-center gap-1.5 text-xs text-muted">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+            </span>
+            All systems operational
+          </div>
         </div>
       </div>
     </footer>
