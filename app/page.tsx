@@ -22,8 +22,6 @@ import {
   Sparkles,
   ArrowRight,
   Activity,
-  Server,
-  Cpu,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
@@ -40,7 +38,6 @@ const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "Screenshots", href: "#screenshots" },
   { label: "Download", href: "#download" },
-  { label: "Status", href: "#status" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -128,7 +125,6 @@ export default function Home() {
         <Hero />
         <Features />
         <Screenshots />
-        <ServerStatus />
         <DownloadSection />
         <FAQ />
       </main>
@@ -189,6 +185,12 @@ function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
               {l.label}
             </a>
           ))}
+          <a
+            href="/status"
+            className="rounded-xl px-4 py-2 text-sm text-muted transition-all hover:bg-border/50 hover:text-foreground"
+          >
+            Status
+          </a>
         </div>
 
         <div className="flex items-center gap-2">
@@ -278,6 +280,14 @@ function Sidebar({
           >
             <ExternalLink className="h-4 w-4" />
             Releases
+          </a>
+          <a
+            href="/status"
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-muted transition-all hover:bg-border/50 hover:text-foreground"
+          >
+            <Activity className="h-4 w-4" />
+            Server Status
           </a>
         </div>
       </nav>
@@ -535,314 +545,6 @@ function Screenshots() {
         </div>
       </div>
     </section>
-  );
-}
-
-const HEALTH_ENDPOINT = "https://maxstream-extractor.maxstream123.workers.dev/health";
-
-interface HealthProvider {
-  name: string;
-  domain: string;
-  type: string;
-  kind?: string;
-  healthy: boolean;
-  status: number;
-  responseMs: number;
-  error?: string;
-}
-
-interface HealthData {
-  timestamp: string;
-  servers: HealthProvider[];
-  extractors: HealthProvider[];
-  summary: {
-    servers: { total: number; healthy: number; unhealthy: number };
-    extractors: { total: number; healthy: number; unhealthy: number };
-  };
-}
-
-function ServerStatus() {
-  const [data, setData] = useState<HealthData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"servers" | "extractors">("servers");
-  const fetchedRef = useRef(false);
-
-  const fetchHealth = useCallback(async () => {
-    if (loading) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(HEALTH_ENDPOINT);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json);
-      fetchedRef.current = true;
-    } catch (e: any) {
-      setError(e.message || "Failed to fetch status");
-    } finally {
-      setLoading(false);
-    }
-  }, [loading]);
-
-  useEffect(() => {
-    fetchHealth();
-    const interval = setInterval(fetchHealth, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const items = activeTab === "servers" ? data?.servers : data?.extractors;
-  const summary = activeTab === "servers" ? data?.summary?.servers : data?.summary?.extractors;
-
-  // Group extractors by kind
-  const extractorGroups = data?.extractors
-    ? {
-        webview: data.extractors.filter((e) => e.kind === "webview"),
-        api: data.extractors.filter((e) => e.kind === "api"),
-        native: data.extractors.filter((e) => e.kind === "native"),
-      }
-    : null;
-
-  return (
-    <section id="status" className="relative border-t border-border bg-card/30">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-brand)_0%,_transparent_70%)] opacity-[0.02]" />
-      <div className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
-        <RevealDiv className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Server{" "}
-            <span className="gradient-text-static">status</span>
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-base text-muted sm:text-lg">
-            Real-time health of all streaming servers and extractors.
-          </p>
-        </RevealDiv>
-
-        <RevealDiv delay={100} className="mt-12">
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              {
-                label: "Servers",
-                healthy: data?.summary?.servers?.healthy ?? 0,
-                total: data?.summary?.servers?.total ?? 0,
-                icon: Server,
-              },
-              {
-                label: "Extractors",
-                healthy: data?.summary?.extractors?.healthy ?? 0,
-                total: data?.summary?.extractors?.total ?? 0,
-                icon: Cpu,
-              },
-              {
-                label: "Total Healthy",
-                healthy:
-                  ((data?.summary?.servers?.healthy ?? 0) +
-                    (data?.summary?.extractors?.healthy ?? 0)),
-                total:
-                  ((data?.summary?.servers?.total ?? 0) +
-                    (data?.summary?.extractors?.total ?? 0)),
-                icon: Activity,
-              },
-              {
-                label: "Last Checked",
-                healthy: 0,
-                total: 0,
-                icon: RefreshCw,
-                timestamp: data?.timestamp,
-              },
-            ].map((card) => (
-              <div
-                key={card.label}
-                className="glass-card rounded-2xl p-4 text-center sm:p-5"
-              >
-                <card.icon className="mx-auto mb-2 h-5 w-5 text-brand/70" />
-                <p className="text-2xl font-bold sm:text-3xl">
-                  {card.timestamp
-                    ? new Date(card.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : `${card.healthy}`}
-                </p>
-                <p className="mt-1 text-xs text-muted sm:text-sm">
-                  {card.timestamp ? "Updated" : `of ${card.total} healthy`}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Tabs + Refresh */}
-          <div className="mt-8 flex items-center justify-between">
-            <div className="flex gap-1 rounded-xl bg-border/30 p-1">
-              {(["servers", "extractors"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                    activeTab === tab
-                      ? "bg-brand text-white shadow-lg shadow-brand/20"
-                      : "text-muted hover:text-foreground"
-                  }`}
-                >
-                  {tab === "servers" ? "Servers" : "Extractors"}
-                  {tab === "servers"
-                    ? ` (${data?.summary?.servers?.healthy ?? 0}/${data?.summary?.servers?.total ?? 0})`
-                    : ` (${data?.summary?.extractors?.healthy ?? 0}/${data?.summary?.extractors?.total ?? 0})`}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={fetchHealth}
-              disabled={loading}
-              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-muted transition-all hover:border-brand/30 hover:text-foreground disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </button>
-          </div>
-
-          {/* Status list */}
-          <div className="mt-6">
-            {error && (
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center text-sm text-red-400">
-                {error}
-              </div>
-            )}
-
-            {loading && !data && (
-              <div className="space-y-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-16 animate-pulse rounded-xl bg-border/30"
-                  />
-                ))}
-              </div>
-            )}
-
-            {!loading && !error && items && items.length === 0 && (
-              <div className="rounded-2xl border border-border bg-card/50 p-6 text-center text-sm text-muted">
-                No data available. Click Refresh to check.
-              </div>
-            )}
-
-            {items && items.length > 0 && activeTab === "servers" && (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {items.map((p, i) => (
-                  <StatusCard key={`${p.domain}-${i}`} provider={p} />
-                ))}
-              </div>
-            )}
-
-            {activeTab === "extractors" && extractorGroups && (
-              <div className="space-y-6">
-                {(
-                  [
-                    { key: "webview", label: "WebView-Based", items: extractorGroups.webview },
-                    { key: "api", label: "API / Worker", items: extractorGroups.api },
-                    { key: "native", label: "Native / HTTP", items: extractorGroups.native },
-                  ] as const
-                ).map(
-                  (group) =>
-                    group.items.length > 0 && (
-                      <div key={group.key}>
-                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted">
-                          <div className="h-px flex-1 bg-border/50" />
-                          <span>{group.label}</span>
-                          <span className="text-xs">
-                            ({group.items.filter((e) => e.healthy).length}/{group.items.length})
-                          </span>
-                          <div className="h-px flex-1 bg-border/50" />
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          {group.items.map((p, i) => (
-                            <StatusCard key={`${p.domain}-${i}`} provider={p} />
-                          ))}
-                        </div>
-                      </div>
-                    )
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Cache info */}
-          {data?.timestamp && (
-            <p className="mt-6 text-center text-xs text-muted">
-              Results cached for 5 minutes. Next refresh in{" "}
-              {Math.max(
-                0,
-                300 - Math.floor((Date.now() - new Date(data.timestamp).getTime()) / 1000)
-              )}
-              s
-            </p>
-          )}
-        </RevealDiv>
-      </div>
-    </section>
-  );
-}
-
-function StatusCard({ provider }: { provider: HealthProvider }) {
-  const isHealthy = provider.healthy;
-  const isUnknown = provider.status === 0 && !provider.error;
-
-  return (
-    <div
-      className={`group glass-card relative overflow-hidden rounded-xl p-4 transition-all duration-300 hover:scale-[1.01] ${
-        isHealthy
-          ? "hover:shadow-lg hover:shadow-green-500/5"
-          : "hover:shadow-lg hover:shadow-red-500/5"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        {/* Status dot */}
-        <div className="relative">
-          <div
-            className={`h-3 w-3 rounded-full ${
-              isHealthy
-                ? "bg-green-500"
-                : isUnknown
-                ? "bg-yellow-500"
-                : "bg-red-500"
-            }`}
-          />
-          {isHealthy && (
-            <div className="absolute inset-0 h-3 w-3 animate-ping rounded-full bg-green-500 opacity-50" />
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold truncate">{provider.name}</p>
-            {provider.kind && (
-              <span className="rounded-full bg-border/50 px-2 py-0.5 text-[10px] font-medium text-muted uppercase">
-                {provider.kind}
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 text-xs text-muted truncate">{provider.domain}</p>
-        </div>
-
-        {/* Response time */}
-        <div className="text-right">
-          {isHealthy ? (
-            <span className="text-sm font-semibold text-green-500">
-              {provider.responseMs}ms
-            </span>
-          ) : isUnknown ? (
-            <span className="text-xs text-yellow-500">Unknown</span>
-          ) : (
-            <span className="text-xs text-red-400">
-              {provider.error || `HTTP ${provider.status}`}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }
 
