@@ -358,6 +358,8 @@ function Screenshots() {
 }
 
 function DownloadSection() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   return (
     <section id="download" className="border-t border-border bg-card/50">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
@@ -367,81 +369,106 @@ function DownloadSection() {
         <p className="mx-auto mt-3 max-w-lg text-center text-sm text-muted sm:text-base">
           Free for Android phones and Android TV. Open-source on GitHub.
         </p>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 sm:mt-16">
-          <div className="flex flex-col justify-between rounded-2xl border border-border bg-background p-6 sm:p-8">
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                <Smartphone className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold sm:text-xl">
-                Android Phone & Tablet
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                Stream movies and series on your mobile device. Requires Android
-                5.0+. Choose the APK matching your device&apos;s CPU architecture.
-              </p>
-            </div>
-            <div className="mt-6 space-y-3 sm:mt-8">
-              <div>
-                <a
-                  href={MOBILE_APK_ARM64}
-                  className="flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-dark"
-                >
-                  <Download className="h-4 w-4" />
-                  arm64-v8a (most devices)
-                </a>
-                <p className="mt-1.5 px-2 text-xs text-muted">
-                  Samsung Galaxy S7 and newer, Pixel, OnePlus, Xiaomi, Redmi, Oppo, Vivo, Realme, Nothing Phone, Motorola G series (2017+)
-                </p>
-              </div>
-              <div>
-                <a
-                  href={MOBILE_APK_ARM32}
-                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-medium transition hover:border-muted"
-                >
-                  <Download className="h-4 w-4" />
-                  armeabi-v7a (32-bit)
-                </a>
-                <p className="mt-1.5 px-2 text-xs text-muted">
-                  Older budget phones: Samsung Galaxy J series, J2–J7, older Moto E/G, LG K series, Android 5.0–6.0 devices
-                </p>
-              </div>
-              <div>
-                <a
-                  href={MOBILE_APK_X86}
-                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-medium transition hover:border-muted"
-                >
-                  <Download className="h-4 w-4" />
-                  x86_64 (emulator / ChromeOS)
-                </a>
-                <p className="mt-1.5 px-2 text-xs text-muted">
-                  Android emulators (AVD, BlueStacks, LDPlayer), ChromeOS tablets, Intel-based Android devices
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col justify-between rounded-2xl border border-border bg-background p-6 sm:p-8">
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                <Tv className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold sm:text-xl">Android TV</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                The full MaxStream experience on your TV with D-pad navigation
-                and a dedicated player.
-              </p>
-            </div>
-            <a
-              href={TV_APK}
-              className="mt-6 flex items-center justify-center gap-2 rounded-full border border-brand bg-transparent px-6 py-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white sm:mt-8"
-            >
-              <Download className="h-4 w-4" />
-              Download TV APK
-            </a>
-          </div>
+        <div className="mt-12 flex justify-center sm:mt-16">
+          <button
+            onClick={() => setDialogOpen(true)}
+            className="flex items-center justify-center gap-2 rounded-full bg-brand px-8 py-4 text-base font-semibold text-white transition hover:bg-brand-dark sm:text-lg"
+          >
+            <Download className="h-5 w-5" />
+            Download APK
+          </button>
         </div>
       </div>
+
+      {dialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setDialogOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-bold">Choose your APK</h3>
+              <button
+                onClick={() => setDialogOpen(false)}
+                className="rounded-lg p-1.5 hover:bg-border/50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                  Mobile
+                </p>
+                <div className="space-y-2">
+                  <a
+                    href={MOBILE_APK_ARM64}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                      <Smartphone className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">arm64-v8a</p>
+                      <p className="text-xs text-muted">Samsung S7+, Pixel, OnePlus, Xiaomi, most phones 2017+</p>
+                    </div>
+                    <Download className="h-4 w-4 shrink-0 text-muted" />
+                  </a>
+                  <a
+                    href={MOBILE_APK_ARM32}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                      <Smartphone className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">armeabi-v7a</p>
+                      <p className="text-xs text-muted">Older budget phones: Galaxy J2–J7, Moto E/G, LG K series</p>
+                    </div>
+                    <Download className="h-4 w-4 shrink-0 text-muted" />
+                  </a>
+                  <a
+                    href={MOBILE_APK_X86}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                      <Smartphone className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">x86_64</p>
+                      <p className="text-xs text-muted">Emulators (AVD, BlueStacks), ChromeOS, Intel devices</p>
+                    </div>
+                    <Download className="h-4 w-4 shrink-0 text-muted" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                  TV
+                </p>
+                <a
+                  href={TV_APK}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-brand/50"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                    <Tv className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Universal (all TV devices)</p>
+                    <p className="text-xs text-muted">Android TV, Fire TV, Chromecast, Nvidia Shield</p>
+                  </div>
+                  <Download className="h-4 w-4 shrink-0 text-muted" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
